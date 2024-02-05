@@ -29,7 +29,22 @@ export class AuthService {
       throw error;
     }
   }
-  signIn() {
-    return 'I am signed in';
+  async signIn(dto: AuthDto) {
+    // find user by email
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email,
+      },
+    });
+
+    if (!user) throw new ForbiddenException('Credentials incorect');
+
+    const pwMatch = await argon.verify(user.hash, dto.password);
+
+    if (!pwMatch) throw new ForbiddenException('Credentials incorect');
+
+    delete user.hash;
+
+    return user;
   }
 }
